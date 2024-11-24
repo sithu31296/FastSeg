@@ -4,7 +4,6 @@ from pathlib import Path
 import onnx
 import torch
 import yaml
-from onnxsim import simplify
 
 from semseg.datasets import *  # noqa: F403
 from semseg.models import *  # noqa: F403
@@ -21,10 +20,6 @@ def export_onnx(model, inputs, file):
     )
     onnx_model = onnx.load(f"{file}.onnx")
     onnx.checker.check_model(onnx_model)
-
-    onnx_model, check = simplify(onnx_model)
-    onnx.save(onnx_model, f"{file}.onnx")
-    assert check, "Simplified ONNX model could not be validated"
     print(f"ONNX model saved to {file}.onnx")
 
 
