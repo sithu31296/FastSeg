@@ -1,9 +1,9 @@
-import torchvision.transforms.functional as TF 
+import torchvision.transforms.functional as TF
 import random
 import math
 import torch
 from torch import Tensor
-from typing import Tuple, List, Union, Tuple, Optional
+from typing import Tuple, List, Union
 
 
 class Compose:
@@ -23,7 +23,9 @@ class Compose:
 
 
 class Normalize:
-    def __init__(self, mean: list = (0.485, 0.456, 0.406), std: list = (0.229, 0.224, 0.225)):
+    def __init__(
+        self, mean: list = (0.485, 0.456, 0.406), std: list = (0.229, 0.224, 0.225)
+    ):
         self.mean = mean
         self.std = std
 
@@ -136,8 +138,8 @@ class Equalize:
 
 class Posterize:
     def __init__(self, bits=2):
-        self.bits = bits # 0-8
-        
+        self.bits = bits  # 0-8
+
     def __call__(self, image, label):
         return TF.posterize(image, self.bits), label
 
@@ -149,21 +151,43 @@ class Affine:
         self.scale = scale
         self.shear = shear
         self.seg_fill = seg_fill
-        
+
     def __call__(self, img, label):
-        return TF.affine(img, self.angle, self.translate, self.scale, self.shear, TF.InterpolationMode.BILINEAR, 0), TF.affine(label, self.angle, self.translate, self.scale, self.shear, TF.InterpolationMode.NEAREST, self.seg_fill) 
+        return TF.affine(
+            img,
+            self.angle,
+            self.translate,
+            self.scale,
+            self.shear,
+            TF.InterpolationMode.BILINEAR,
+            0,
+        ), TF.affine(
+            label,
+            self.angle,
+            self.translate,
+            self.scale,
+            self.shear,
+            TF.InterpolationMode.NEAREST,
+            self.seg_fill,
+        )
 
 
 class RandomRotation:
-    def __init__(self, degrees: float = 10.0, p: float = 0.2, seg_fill: int = 0, expand: bool = False) -> None:
+    def __init__(
+        self,
+        degrees: float = 10.0,
+        p: float = 0.2,
+        seg_fill: int = 0,
+        expand: bool = False,
+    ) -> None:
         """Rotate the image by a random angle between -angle and angle with probability p
 
         Args:
             p: probability
             angle: rotation angle value in degrees, counter-clockwise.
-            expand: Optional expansion flag. 
+            expand: Optional expansion flag.
                     If true, expands the output image to make it large enough to hold the entire rotated image.
-                    If false or omitted, make the output image the same size as the input image. 
+                    If false or omitted, make the output image the same size as the input image.
                     Note that the expand flag assumes rotation around the center and no translation.
         """
         self.p = p
@@ -174,10 +198,18 @@ class RandomRotation:
     def __call__(self, img: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor]:
         random_angle = random.random() * 2 * self.angle - self.angle
         if random.random() < self.p:
-            img = TF.rotate(img, random_angle, TF.InterpolationMode.BILINEAR, self.expand, fill=0)
-            mask = TF.rotate(mask, random_angle, TF.InterpolationMode.NEAREST, self.expand, fill=self.seg_fill)
+            img = TF.rotate(
+                img, random_angle, TF.InterpolationMode.BILINEAR, self.expand, fill=0
+            )
+            mask = TF.rotate(
+                mask,
+                random_angle,
+                TF.InterpolationMode.NEAREST,
+                self.expand,
+                fill=self.seg_fill,
+            )
         return img, mask
-    
+
 
 class CenterCrop:
     def __init__(self, size: Union[int, List[int], Tuple[int]]) -> None:
@@ -209,8 +241,8 @@ class RandomCrop:
         if random.random() < self.p:
             margin_h = max(H - tH, 0)
             margin_w = max(W - tW, 0)
-            y1 = random.randint(0, margin_h+1)
-            x1 = random.randint(0, margin_w+1)
+            y1 = random.randint(0, margin_h + 1)
+            x1 = random.randint(0, margin_w + 1)
             y2 = y1 + tH
             x2 = x1 + tW
             img = img[:, y1:y2, x1:x2]
@@ -219,7 +251,9 @@ class RandomCrop:
 
 
 class Pad:
-    def __init__(self, size: Union[List[int], Tuple[int], int], seg_fill: int = 0) -> None:
+    def __init__(
+        self, size: Union[List[int], Tuple[int], int], seg_fill: int = 0
+    ) -> None:
         """Pad the given image on all sides with the given "pad" value.
         Args:
             size: expected output image size (h, w)
@@ -229,16 +263,18 @@ class Pad:
         self.seg_fill = seg_fill
 
     def __call__(self, img: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor]:
-        padding = (0, 0, self.size[1]-img.shape[2], self.size[0]-img.shape[1])
+        padding = (0, 0, self.size[1] - img.shape[2], self.size[0] - img.shape[1])
         return TF.pad(img, padding), TF.pad(mask, padding, self.seg_fill)
 
 
 class ResizePad:
-    def __init__(self, size: Union[int, Tuple[int], List[int]], seg_fill: int = 0) -> None:
+    def __init__(
+        self, size: Union[int, Tuple[int], List[int]], seg_fill: int = 0
+    ) -> None:
         """Resize the input image to the given size.
         Args:
-            size: Desired output size. 
-                If size is a sequence, the output size will be matched to this. 
+            size: Desired output size.
+                If size is a sequence, the output size will be matched to this.
                 If size is an int, the smaller edge of the image will be matched to this number maintaining the aspect ratio.
         """
         self.size = size
@@ -248,10 +284,10 @@ class ResizePad:
         H, W = img.shape[1:]
         tH, tW = self.size
 
-        # scale the image 
-        scale_factor = min(tH/H, tW/W) if W > H else max(tH/H, tW/W)
+        # scale the image
+        scale_factor = min(tH / H, tW / W) if W > H else max(tH / H, tW / W)
         # nH, nW = int(H * scale_factor + 0.5), int(W * scale_factor + 0.5)
-        nH, nW = round(H*scale_factor), round(W*scale_factor)
+        nH, nW = round(H * scale_factor), round(W * scale_factor)
         img = TF.resize(img, (nH, nW), TF.InterpolationMode.BILINEAR)
         mask = TF.resize(mask, (nH, nW), TF.InterpolationMode.NEAREST)
 
@@ -259,15 +295,15 @@ class ResizePad:
         padding = [0, 0, tW - nW, tH - nH]
         img = TF.pad(img, padding, fill=0)
         mask = TF.pad(mask, padding, fill=self.seg_fill)
-        return img, mask 
+        return img, mask
 
 
 class Resize:
     def __init__(self, size: Union[int, Tuple[int], List[int]]) -> None:
         """Resize the input image to the given size.
         Args:
-            size: Desired output size. 
-                If size is a sequence, the output size will be matched to this. 
+            size: Desired output size.
+                If size is a sequence, the output size will be matched to this.
                 If size is an int, the smaller edge of the image will be matched to this number maintaining the aspect ratio.
         """
         self.size = size
@@ -275,9 +311,9 @@ class Resize:
     def __call__(self, img: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor]:
         H, W = img.shape[1:]
 
-        # scale the image 
+        # scale the image
         scale_factor = self.size[0] / min(H, W)
-        nH, nW = round(H*scale_factor), round(W*scale_factor)
+        nH, nW = round(H * scale_factor), round(W * scale_factor)
         img = TF.resize(img, (nH, nW), TF.InterpolationMode.BILINEAR)
         mask = TF.resize(mask, (nH, nW), TF.InterpolationMode.NEAREST)
 
@@ -285,13 +321,17 @@ class Resize:
         alignH, alignW = int(math.ceil(nH / 32)) * 32, int(math.ceil(nW / 32)) * 32
         img = TF.resize(img, (alignH, alignW), TF.InterpolationMode.BILINEAR)
         mask = TF.resize(mask, (alignH, alignW), TF.InterpolationMode.NEAREST)
-        return img, mask 
+        return img, mask
 
 
 class RandomResizedCrop:
-    def __init__(self, size: Union[int, Tuple[int], List[int]], scale: Tuple[float, float] = (0.5, 2.0), seg_fill: int = 0) -> None:
-        """Resize the input image to the given size.
-        """
+    def __init__(
+        self,
+        size: Union[int, Tuple[int], List[int]],
+        scale: Tuple[float, float] = (0.5, 2.0),
+        seg_fill: int = 0,
+    ) -> None:
+        """Resize the input image to the given size."""
         self.size = size
         self.scale = scale
         self.seg_fill = seg_fill
@@ -303,10 +343,10 @@ class RandomResizedCrop:
         # get the scale
         ratio = random.random() * (self.scale[1] - self.scale[0]) + self.scale[0]
         # ratio = random.uniform(min(self.scale), max(self.scale))
-        scale = int(tH*ratio), int(tW*4*ratio)
+        scale = int(tH * ratio), int(tW * 4 * ratio)
 
-        # scale the image 
-        scale_factor = min(max(scale)/max(H, W), min(scale)/min(H, W))
+        # scale the image
+        scale_factor = min(max(scale) / max(H, W), min(scale) / min(H, W))
         nH, nW = int(H * scale_factor + 0.5), int(W * scale_factor + 0.5)
         # nH, nW = int(math.ceil(nH / 32)) * 32, int(math.ceil(nW / 32)) * 32
         img = TF.resize(img, (nH, nW), TF.InterpolationMode.BILINEAR)
@@ -315,8 +355,8 @@ class RandomResizedCrop:
         # random crop
         margin_h = max(img.shape[1] - tH, 0)
         margin_w = max(img.shape[2] - tW, 0)
-        y1 = random.randint(0, margin_h+1)
-        x1 = random.randint(0, margin_w+1)
+        y1 = random.randint(0, margin_h + 1)
+        x1 = random.randint(0, margin_w + 1)
         y2 = y1 + tH
         x2 = x1 + tW
         img = img[:, y1:y2, x1:x2]
@@ -327,40 +367,43 @@ class RandomResizedCrop:
             padding = [0, 0, tW - img.shape[2], tH - img.shape[1]]
             img = TF.pad(img, padding, fill=0)
             mask = TF.pad(mask, padding, fill=self.seg_fill)
-        return img, mask 
-
+        return img, mask
 
 
 def get_train_augmentation(size: Union[int, Tuple[int], List[int]], seg_fill: int = 0):
-    return Compose([
-        # ColorJitter(brightness=0.0, contrast=0.5, saturation=0.5, hue=0.5),
-        # RandomAdjustSharpness(sharpness_factor=0.1, p=0.5),
-        # RandomAutoContrast(p=0.2),
-        RandomHorizontalFlip(p=0.5),
-        # RandomVerticalFlip(p=0.5),
-        # RandomGaussianBlur((3, 3), p=0.5),
-        # RandomGrayscale(p=0.5),
-        # RandomRotation(degrees=10, p=0.3, seg_fill=seg_fill),
-        RandomResizedCrop(size, scale=(0.5, 2.0), seg_fill=seg_fill),
-        Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-    ])
+    return Compose(
+        [
+            # ColorJitter(brightness=0.0, contrast=0.5, saturation=0.5, hue=0.5),
+            # RandomAdjustSharpness(sharpness_factor=0.1, p=0.5),
+            # RandomAutoContrast(p=0.2),
+            RandomHorizontalFlip(p=0.5),
+            # RandomVerticalFlip(p=0.5),
+            # RandomGaussianBlur((3, 3), p=0.5),
+            # RandomGrayscale(p=0.5),
+            # RandomRotation(degrees=10, p=0.3, seg_fill=seg_fill),
+            RandomResizedCrop(size, scale=(0.5, 2.0), seg_fill=seg_fill),
+            Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ]
+    )
+
 
 def get_val_augmentation(size: Union[int, Tuple[int], List[int]]):
-    return Compose([
-        Resize(size),
-        Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-    ])
+    return Compose(
+        [Resize(size), Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))]
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     h = 230
     w = 420
     img = torch.randn(3, h, w)
     mask = torch.randn(1, h, w)
-    aug = Compose([
-        RandomResizedCrop((512, 512)),
-        # RandomCrop((512, 512), p=1.0),
-        # Pad((512, 512))
-    ])
+    aug = Compose(
+        [
+            RandomResizedCrop((512, 512)),
+            # RandomCrop((512, 512), p=1.0),
+            # Pad((512, 512))
+        ]
+    )
     img, mask = aug(img, mask)
     print(img.shape, mask.shape)
