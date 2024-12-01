@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "semseg"
+version = "0.5.0"
+description = "SOTA Semantic Segmentation Models"
+readme = "README.md"
+license = {text = "MIT License"}
+requires-python = ">=3.10.12"
+dependencies = [
+    "coremltools>=8.1",
+    "einops~=0.8.0",
+    "fvcore~=0.1.5.post20221221",
+    "matplotlib~=3.9.2",
+    "numpy~=1.26.4",
+    "onnx>=1.17.0",
+    "rich~=13.9.4",
+    "scipy~=1.14.1",
+    "tabulate~=0.9.0",
+    "tensorboard~=2.18.0",
+    "torch>=2.5.1",
+    "torchvision>=0.20.1",
+    "tqdm~=4.67.0",
+]
+scripts = { semseg-infer = "semseg.tools.infer:main" }
+
+[project.urls]
+Repository = "https://github.com/sithu31296/semantic-segmentation"
+
+[tool.hatch.build.targets.wheel]
+packages = ["semseg"]
